@@ -1,81 +1,109 @@
- #include "Ultrasonic.h" 
+int RPWM_1 = 6;
+int LPWM_1 = 5;
+int RPWM_2 = 9;
+int LPWM_2 = 10;
 
-const int motorA1 = 4;
-const int motorA2 = 5;
-const int motorB1 = 6;
-const int motorB2 = 7;
-
- Ultrasonic frontSensor(10,11); 
-
-char state;
-
-void stopMovement(){
-  digitalWrite(motorA2, LOW);
-  digitalWrite(motorB1, LOW);
-  digitalWrite(motorA1, LOW);
-  digitalWrite(motorB2, LOW);
-}
-
-void motorController(int motor1, int motor2, int motor3, int motor4) {
-  digitalWrite(motorA2, motor2);
-  digitalWrite(motorB1, motor3);
-  digitalWrite(motorA1, motor1);
-  digitalWrite(motorB2, motor4);
-}
-
-
-float readFrontSensor() {
-  long microsec = frontSensor.timing();
-  return frontSensor.convert(microsec, Ultrasonic::CM);
-}
-
-
+int state_RPWM_1 = 0;
+int state_LPWM_1 = 0;
+int state_RPWM_2 = 0;
+int state_LPWM_2 = 0;
 
 void setup() {
   Serial.begin(9600);
   Serial.flush();
-  Serial.println("Serial connection stablished");
-  pinMode(motorA1, OUTPUT);
-  pinMode(motorA2, OUTPUT);
-  pinMode(motorB1, OUTPUT);
-  pinMode(motorB2, OUTPUT);
+  Serial.println("Serial connection stabilished");
+  
+  pinMode(RPWM_1, OUTPUT);
+  pinMode(LPWM_1, OUTPUT);
+  
+  pinMode(RPWM_2, OUTPUT);
+  pinMode(LPWM_2, OUTPUT);
+
 }
+
+void motorStop(){
+  analogWrite(RPWM_1, 0);
+  analogWrite(LPWM_1, 0);
+  analogWrite(RPWM_2, 0);
+  analogWrite(LPWM_2, 0);
+}
+
 
 void loop() {
   uint8_t byteFromSerial = Serial.read();
   uint8_t buff[100] = {byteFromSerial};
   String state = (char*)buff;
 
-  switch (state.charAt(0)) {
-    case 'L':
-      motorController(HIGH, LOW, LOW, HIGH);
-      delay(100);
-      stopMovement();
-      break;
-    case 'R':
-      motorController(LOW, HIGH, HIGH, LOW);
-      delay(100);
-      stopMovement();
-      break;
-    case 'F':
-      if(readFrontSensor() > 10){
-        Serial.println(readFrontSensor());
-        motorController(HIGH, LOW, HIGH, LOW);
-        delay(150);
-        stopMovement();
-      };
-      break;
+    switch (state.charAt(0)){
+      case 'F':
+      if(state_RPWM_1 != 1 && state_RPWM_2 != 1){
+        analogWrite(RPWM_2, 90);
+        analogWrite(RPWM_1, 90);
+        analogWrite(LPWM_1, 0);
+        analogWrite(LPWM_2, 0);
+        state_RPWM_1 = 1;
+        state_RPWM_2 = 1;
+        state_LPWM_1 = 0;
+        state_LPWM_2 = 0;
+        Serial.println('F');
+      }else if (state_RPWM_1 != 1 && state_RPWM_2 == 1){
+        analogWrite(RPWM_1, 90);
+        analogWrite(LPWM_1, 0);
+        analogWrite(LPWM_2, 0);
+        state_RPWM_1 = 1;
+        state_RPWM_2 = 1;
+        state_LPWM_1 = 0;
+        state_LPWM_2 = 0;
+        Serial.println('F');
+      }else if (state_RPWM_1 == 1 && state_RPWM_2 != 1){
+        analogWrite(RPWM_2, 90);
+        analogWrite(LPWM_1, 0);
+        analogWrite(LPWM_2, 0);
+        state_RPWM_1 = 1;
+        state_RPWM_2 = 1;
+        state_LPWM_1 = 0;
+        state_LPWM_2 = 0;
+        Serial.println('F');
+      }
+      delay(1000);
+    break;
+
     case 'B':
-      motorController(LOW, HIGH, LOW, HIGH);
-      delay(150);
-      stopMovement();
-      break;
-    case 'S':
-      stopMovement();
-      break;
+      if(state_LPWM_1 != 1 && state_LPWM_2 != 1){
+        analogWrite(LPWM_2, 90);
+        analogWrite(LPWM_1, 90);
+        analogWrite(RPWM_1, 0);
+        analogWrite(RPWM_2, 0);
+        state_RPWM_1 = 0;
+        state_RPWM_2 = 0;
+        state_LPWM_1 = 1;
+        state_LPWM_2 = 1;
+        Serial.println('B');
+      }else if (state_LPWM_1 != 1 && state_LPWM_2 == 1){
+        analogWrite(LPWM_1, 90);
+        analogWrite(RPWM_1, 0);
+        analogWrite(RPWM_2, 0);
+        state_RPWM_1 = 0;
+        state_RPWM_2 = 0;
+        state_LPWM_1 = 1;
+        state_LPWM_2 = 1;
+        Serial.println('B');
+      }else if (state_LPWM_1 == 1 && state_LPWM_2 != 1){
+        analogWrite(LPWM_2, 90);
+        analogWrite(RPWM_1, 0);
+        analogWrite(RPWM_2, 0);
+        state_RPWM_1 = 0;
+        state_RPWM_2 = 0;
+        state_LPWM_1 = 1;
+        state_LPWM_2 = 1;
+        Serial.println('B');
+      }
+      delay(1000);
+
+    break;
   }
-
+  
+  motorStop();
+  delay(1000);
   Serial.flush();
-};
-
-
+}
